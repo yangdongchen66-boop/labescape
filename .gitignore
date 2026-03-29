@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+target/
+build/
+*.class
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Qoder
+.qoder/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+logs/

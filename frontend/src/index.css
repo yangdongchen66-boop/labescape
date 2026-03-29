@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", "STSong", serif;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0c0a09;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+/* Fantasy RPG Scrollbar - Dark Gold Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(68, 55, 40, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(180, 140, 80, 0.6), rgba(140, 100, 50, 0.6));
+  border-radius: 4px;
+  border: 1px solid rgba(180, 140, 80, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(200, 160, 100, 0.8), rgba(160, 120, 70, 0.8));
+}
+
+/* Fantasy UI Components */
+@layer components {
+  .fantasy-panel {
+    @apply relative border-2 border-double border-amber-700/50 bg-stone-900/95;
+    box-shadow: 
+      inset 0 0 60px rgba(0, 0, 0, 0.8),
+      0 4px 20px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(180, 140, 80, 0.2);
+  }
+
+  .fantasy-text-gold {
+    @apply font-bold tracking-wider;
+    color: #d4a853;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+
+  .fantasy-text-purple {
+    @apply font-bold tracking-wider;
+    color: #a855f7;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+
+  .fantasy-border-glow {
+    box-shadow: 
+      0 0 10px rgba(180, 140, 80, 0.2),
+      inset 0 0 20px rgba(180, 140, 80, 0.05);
+  }
+
+  .parchment-texture {
+    background-image: 
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(139, 119, 89, 0.03) 2px,
+        rgba(139, 119, 89, 0.03) 4px
+      );
+  }
+}
