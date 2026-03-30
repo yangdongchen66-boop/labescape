@@ -1,0 +1,14 @@
+# Railway 配置 - 使用 Dockerfile 构建
+
+[build]
+# 使用 Dockerfile 而非 nixpacks
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+# 健康检查配置
+healthcheckPath = "/api/game/health"
+healthcheckTimeout = 60
+
+[start]
+# Docker 镜像已包含启动命令，这里可以留空或指定额外参数
+startCommand = ""
