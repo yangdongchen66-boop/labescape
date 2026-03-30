@@ -33,7 +33,12 @@ public class EventSystem {
             GameEvent.powerOutage(),
             GameEvent.seniorAdvice(),
             GameEvent.weeklyMeeting(),
-            GameEvent.deadlineReminder()
+            GameEvent.deadlineReminder(),
+            // 赚钱事件
+            GameEvent.partTimeJob(),
+            GameEvent.ghostwriting(),
+            GameEvent.scholarshipArrival(),
+            GameEvent.fatherTransfer()
         );
     }
 
@@ -167,6 +172,10 @@ public class EventSystem {
             }
             if (effect.getPreparationChange() != 0) {
                 sb.append(String.format(" 准备度+%d", effect.getPreparationChange()));
+            }
+            if (effect.getGoldChange() != 0) {
+                sb.append(String.format(" 金币%s%d", 
+                    effect.getGoldChange() > 0 ? "+" : "", effect.getGoldChange()));
             }
         }
         

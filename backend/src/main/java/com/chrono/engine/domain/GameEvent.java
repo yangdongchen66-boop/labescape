@@ -88,6 +88,8 @@ public class GameEvent {
         private int mentorMoodChange = 0;
         @Builder.Default
         private int preparationChange = 0;
+        @Builder.Default
+        private int goldChange = 0;
         
         // 特殊效果
         @Builder.Default
@@ -208,6 +210,11 @@ public class GameEvent {
             int newPrep = Math.max(0, Math.min(5, 
                 session.getPreparation() + effect.getPreparationChange()));
             session.setPreparation(newPrep);
+        }
+        
+        if (effect.getGoldChange() != 0) {
+            int newGold = Math.max(0, session.getGold() + effect.getGoldChange());
+            session.setGold(newGold);
         }
         
         isTriggered = true;
@@ -340,6 +347,90 @@ public class GameEvent {
                         .probability(100)
                         .build())
                 .isMandatory(true)
+                .build();
+    }
+
+    // ==================== 赚钱事件 ====================
+
+    /**
+     * 兼职机会（消耗HP换钱）
+     */
+    public static GameEvent partTimeJob() {
+        return GameEvent.builder()
+                .id("part_time_job")
+                .type("JOB")
+                .title("兼职机会")
+                .description("学弟说有个网站需要改BUG，报酬80块，但要熟夜。")
+                .effect(EventEffect.builder()
+                        .hpChange(-10)
+                        .goldChange(80)
+                        .build())
+                .triggerCondition(TriggerCondition.builder()
+                        .minDay(1)
+                        .probability(25)
+                        .build())
+                .build();
+    }
+
+    /**
+     * 代写需求（Day 3+ 解锁）
+     */
+    public static GameEvent ghostwriting() {
+        return GameEvent.builder()
+                .id("ghostwriting")
+                .type("JOB")
+                .title("代写需求")
+                .description("有人払120请你帮忙写个脚本，但要花一整天。")
+                .effect(EventEffect.builder()
+                        .mpChange(-15)
+                        .goldChange(120)
+                        .build())
+                .triggerCondition(TriggerCondition.builder()
+                        .minDay(3)
+                        .probability(20)
+                        .build())
+                .build();
+    }
+
+    /**
+     * 奖学金到账（Day 4 强制触发）
+     */
+    public static GameEvent scholarshipArrival() {
+        return GameEvent.builder()
+                .id("scholarship_arrival")
+                .type("SYSTEM")
+                .title("奖学金到账")
+                .description("上个学期的奖学金终于到账了！+200G")
+                .effect(EventEffect.builder()
+                        .mpChange(10)
+                        .goldChange(200)
+                        .build())
+                .triggerCondition(TriggerCondition.builder()
+                        .minDay(4)
+                        .maxDay(4)
+                        .timeBlock(0)  // 上午到账
+                        .probability(100)
+                        .build())
+                .isMandatory(true)
+                .build();
+    }
+
+    /**
+     * 老爹转账（紧急救济）
+     */
+    public static GameEvent fatherTransfer() {
+        return GameEvent.builder()
+                .id("father_transfer")
+                .type("SOCIAL")
+                .title("老爹转账")
+                .description("老爹问你最近怎么样，顺便转了150块生活费。")
+                .effect(EventEffect.builder()
+                        .mpChange(5)
+                        .goldChange(150)
+                        .build())
+                .triggerCondition(TriggerCondition.builder()
+                        .probability(15)
+                        .build())
                 .build();
     }
 }

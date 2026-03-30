@@ -1,0 +1,10 @@
+# Nixpacks 配置 - Java 21
+[phases.build]
+dependsOn = ["setup"]
+cmds = ["mvn clean package -DskipTests"]
+
+[phases.setup]
+nixPkgs = ["jdk21", "maven"]
+
+[start]
+cmd = "java -jar target/chrono-engine-*.jar"

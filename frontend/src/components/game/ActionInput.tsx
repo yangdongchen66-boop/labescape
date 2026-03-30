@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
-import { Send, Coffee, Pizza, RotateCcw } from 'lucide-react';
+import { Send, Coffee, Pizza, RotateCcw, BookOpen, Gift } from 'lucide-react';
 
 /**
  * 行动输入组件 - 终端风格
@@ -52,12 +52,13 @@ export function ActionInput() {
       label: '买美式', 
       action: () => {
         if (gold >= 25) {
-          updateStats({ hp: Math.min(100, useGameStore.getState().hp + 15) });
-          addChat({ role: 'player', text: '我去楼下瑞幸买了杯冰美式 (+15 HP)' });
+          updateStats({ hp: Math.min(100, useGameStore.getState().hp + 15), gold: gold - 25 });
+          addChat({ role: 'player', text: '我去楼下瑞幸买了杯冰美式 (+15 HP, -¥25)' });
         }
       },
       disabled: gold < 25,
-      cost: 25
+      cost: 25,
+      effect: 'HP+15'
     },
     { 
       icon: Pizza, 
@@ -65,11 +66,40 @@ export function ActionInput() {
       action: () => {
         if (gold >= 100) {
           updateStats({ mp: Math.min(100, useGameStore.getState().mp + 20), gold: gold - 100 });
-          addChat({ role: 'player', text: '我请师弟吃烧烤，让他帮忙代写周报 (+20 MP)' });
+          addChat({ role: 'player', text: '我请师弟吃烧烤，让他帮忙代写周报 (+20 MP, -¥100)' });
         }
       },
       disabled: gold < 100,
-      cost: 100
+      cost: 100,
+      effect: 'MP+20'
+    },
+    {
+      icon: BookOpen,
+      label: '买资料',
+      action: async () => {
+        if (gold >= 50) {
+          setIsSubmitting(true);
+          await submitPlayerAction('我去买了一套面试资料准备笔试');
+          setIsSubmitting(false);
+        }
+      },
+      disabled: gold < 50 || isSubmitting,
+      cost: 50,
+      effect: '准备+1'
+    },
+    {
+      icon: Gift,
+      label: '请客',
+      action: async () => {
+        if (gold >= 150) {
+          setIsSubmitting(true);
+          await submitPlayerAction('我请导师吃了顿高档日料');
+          setIsSubmitting(false);
+        }
+      },
+      disabled: gold < 150 || isSubmitting,
+      cost: 150,
+      effect: '态度+15'
     },
   ];
 
@@ -96,7 +126,7 @@ export function ActionInput() {
   return (
     <div className="h-full flex flex-col justify-center">
       {/* 快捷操作按钮 */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-1.5 mb-3 flex-wrap">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (
@@ -104,7 +134,7 @@ export function ActionInput() {
               key={action.label}
               onClick={action.action}
               disabled={action.disabled || isSubmitting}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-medium transition-colors border ${
+              className={`flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium transition-colors border ${
                 action.disabled 
                   ? 'bg-[#1a1a1a] text-gray-600 border-[#2a2a2a] cursor-not-allowed' 
                   : 'bg-[#252526] text-gray-300 hover:bg-[#2a2a2a] border-[#3a3a3a] hover:border-[#4a4a4a]'
@@ -112,9 +142,10 @@ export function ActionInput() {
               whileHover={!action.disabled ? { scale: 1.02 } : {}}
               whileTap={!action.disabled ? { scale: 0.98 } : {}}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-3 h-3" />
               <span>{action.label}</span>
               <span className="text-yellow-500/80">¥{action.cost}</span>
+              <span className="text-green-400/60">({action.effect})</span>
             </motion.button>
           );
         })}

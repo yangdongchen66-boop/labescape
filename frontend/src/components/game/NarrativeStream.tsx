@@ -1,7 +1,7 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGameStore } from '../../store/useGameStore';
-import { Sword, Brain, Eye, Heart, Sparkles, MessageCircle, Coins } from 'lucide-react';
+import { useGameStore, ActionHook } from '../../store/useGameStore';
+import { Sword, Brain, Eye, Heart, Sparkles, MessageCircle, Coins, ChevronDown, ChevronUp, CheckCircle, XCircle } from 'lucide-react';
 
 /**
  * 叙事流组件 - V3 LLM版
@@ -13,9 +13,87 @@ const attrIcons: Record<string, typeof Sword> = {
   str: Sword, dex: Eye, int: Brain, con: Heart, wis: Sparkles, cha: MessageCircle,
 };
 
+// 独立的 Hook 项组件，避免在 map 中使用 useState
+function HookItem({ hook, onSelect, disabled }: { hook: ActionHook; onSelect: (text: string) => void; disabled: boolean }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const Icon = hook.attr ? attrIcons[hook.attr] : hook.goldCost ? Coins : hook.isRest ? Heart : MessageCircle;
+  const hasConsequences = hook.successReward || hook.failPenalty;
+  
+  return (
+    <motion.div
+      className="rounded-lg bg-[#252526] border border-[#333] hover:border-blue-500/50 transition-all overflow-hidden"
+    >
+      <motion.button
+        onClick={() => onSelect(hook.text)}
+        disabled={disabled}
+        className="w-full flex items-center gap-3 p-2.5 text-left disabled:opacity-50"
+        whileHover={{ scale: 1.01, x: 4 }}
+        whileTap={{ scale: 0.99 }}
+      >
+        <Icon className={`w-4 h-4 shrink-0 ${hook.attr ? 'text-blue-400' : hook.goldCost ? 'text-yellow-400' : 'text-green-400'}`} />
+        <div className="flex-1">
+          <div className="text-xs text-gray-200">{hook.text}</div>
+        </div>
+        <div className="flex gap-2 text-[10px] items-center">
+          {hook.attr && <span className="text-blue-400">{hook.attr.toUpperCase()} DC{hook.dc}</span>}
+          {hook.hpCost && hook.hpCost > 0 && <span className="text-red-400">-{hook.hpCost}HP</span>}
+          {hook.hpCost && hook.hpCost < 0 && <span className="text-green-400">+{-hook.hpCost}HP</span>}
+          {hook.goldCost && <span className="text-yellow-400">-{hook.goldCost}G</span>}
+          {hasConsequences && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+              className="p-0.5 hover:bg-gray-700 rounded"
+            >
+              {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
+            </button>
+          )}
+        </div>
+      </motion.button>
+      
+      {/* 后果预览 */}
+      <AnimatePresence>
+        {isExpanded && hasConsequences && (
+          <motion.div
+            className="px-3 pb-2 border-t border-gray-700/50 pt-2 space-y-1"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {hook.successReward && (
+              <div className="flex items-center gap-2 text-[10px]">
+                <CheckCircle className="w-3 h-3 text-green-500" />
+                <span className="text-gray-500">成功:</span>
+                <span className="text-green-400">{hook.successReward}</span>
+              </div>
+            )}
+            {hook.failPenalty && (
+              <div className="flex items-center gap-2 text-[10px]">
+                <XCircle className="w-3 h-3 text-red-500" />
+                <span className="text-gray-500">失败:</span>
+                <span className="text-red-400">{hook.failPenalty}</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 export function NarrativeStream() {
-  const { chatLog, gameState, isRolling, submitPlayerAction } = useGameStore();
+  const { chatLog, gameState, isRolling, submitPlayerAction, mentorMood } = useGameStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // NPC态度表情和文字
+  const getMentorEmoji = (mood: number) => {
+    if (mood >= 30) return { emoji: '😊', text: '满意', color: 'text-green-400', bg: 'bg-green-500/20' };
+    if (mood >= 10) return { emoji: '🙂', text: '较好', color: 'text-green-300', bg: 'bg-green-500/10' };
+    if (mood >= 0) return { emoji: '😐', text: '平常', color: 'text-gray-400', bg: 'bg-gray-500/20' };
+    if (mood >= -20) return { emoji: '😕', text: '不满', color: 'text-yellow-400', bg: 'bg-yellow-500/20' };
+    if (mood >= -50) return { emoji: '😠', text: '愚怒', color: 'text-orange-400', bg: 'bg-orange-500/20' };
+    return { emoji: '🤬', text: '暴怒', color: 'text-red-500', bg: 'bg-red-500/20' };
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -56,6 +134,12 @@ export function NarrativeStream() {
                 <span className={`text-xs font-bold ${style.name}`}>
                   {msg.name || (msg.role === 'dm' ? '命运法则' : msg.role === 'player' ? '你' : '系统')}
                 </span>
+                {/* NPC态度标签 */}
+                {(msg.role === 'npc' || (msg.role === 'dm' && msg.name?.includes('导'))) && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${getMentorEmoji(mentorMood).bg} ${getMentorEmoji(mentorMood).color}`}>
+                    {getMentorEmoji(mentorMood).emoji} {getMentorEmoji(mentorMood).text} ({mentorMood > 0 ? '+' : ''}{mentorMood})
+                  </span>
+                )}
                 <span className="text-[10px] text-gray-600">
                   {new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -71,30 +155,14 @@ export function NarrativeStream() {
               {hasHooks && !isRolling && (
                 <div className="space-y-2 mt-3 pt-3 border-t border-gray-700/50">
                   <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">选择行动:</div>
-                  {msg.hooks!.map((hook) => {
-                    const Icon = hook.attr ? attrIcons[hook.attr] : hook.goldCost ? Coins : hook.isRest ? Heart : MessageCircle;
-                    return (
-                      <motion.button
-                        key={hook.id}
-                        onClick={() => handleHookClick(hook.text)}
-                        disabled={isRolling}
-                        className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-[#252526] border border-[#333] hover:border-blue-500/50 hover:bg-[#2a2a2a] transition-all text-left disabled:opacity-50"
-                        whileHover={{ scale: 1.01, x: 4 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <Icon className={`w-4 h-4 ${hook.attr ? 'text-blue-400' : hook.goldCost ? 'text-yellow-400' : 'text-green-400'}`} />
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-200">{hook.text}</div>
-                        </div>
-                        <div className="flex gap-2 text-[10px]">
-                          {hook.attr && <span className="text-blue-400">{hook.attr.toUpperCase()} DC{hook.dc}</span>}
-                          {hook.hpCost && hook.hpCost > 0 && <span className="text-red-400">-{hook.hpCost}HP</span>}
-                          {hook.hpCost && hook.hpCost < 0 && <span className="text-green-400">+{-hook.hpCost}HP</span>}
-                          {hook.goldCost && <span className="text-yellow-400">-{hook.goldCost}G</span>}
-                        </div>
-                      </motion.button>
-                    );
-                  })}
+                  {msg.hooks!.map((hook) => (
+                    <HookItem 
+                      key={hook.id} 
+                      hook={hook} 
+                      onSelect={handleHookClick} 
+                      disabled={isRolling} 
+                    />
+                  ))}
                 </div>
               )}
             </motion.div>

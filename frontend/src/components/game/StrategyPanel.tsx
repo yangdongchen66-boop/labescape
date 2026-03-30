@@ -1,10 +1,32 @@
 import React from 'react';
 import { useGameStore } from '../../store/useGameStore';
+import { CheckCircle, AlertCircle } from 'lucide-react';
+
+interface StrategySuggestion {
+  currentPhase: string;
+  suggestions: Array<{
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    priority: number;
+    isCompleted: boolean;
+    completionReason: string;
+  }>;
+  lastActionAnalysis?: {
+    playerDid: string;
+    expectedWas: string;
+    isMatch: boolean;
+    feedback: string;
+  };
+  riskWarning: string;
+  nextRecommended: string;
+}
 
 /**
  * 策略建议面板组件
  * 
- * 基于当前游戏状态提供AI策略建议
+ * 基于当前游戏状态提供AI策略建议，并显示完成状态
  */
 export const StrategyPanel: React.FC = () => {
   const {
@@ -15,10 +37,20 @@ export const StrategyPanel: React.FC = () => {
     currentDay,
     companies,
     sideQuests,
+    strategySuggestion,
   } = useGameStore();
 
-  // 生成策略建议
-  const generateStrategy = () => {
+  // 解析后端传来的策略建议
+  const parsedStrategy: StrategySuggestion | null = strategySuggestion ? {
+    currentPhase: strategySuggestion.currentPhase || '',
+    suggestions: strategySuggestion.suggestions || [],
+    lastActionAnalysis: strategySuggestion.lastActionAnalysis,
+    riskWarning: strategySuggestion.riskWarning || '',
+    nextRecommended: strategySuggestion.nextRecommended || '',
+  } : null;
+
+  // 生成本地策略（作为后备）
+  const generateLocalStrategy = () => {
     const priorities: string[] = [];
     let riskWarning = '';
     let recommendedAction = '';
@@ -32,7 +64,6 @@ export const StrategyPanel: React.FC = () => {
 
     // 根据阶段生成优先级
     if (gamePhase === 'PREP') {
-      // 准备期：刷题、社交
       if (!sideQuests.find(q => q.id === 'study_1')?.isCompleted) {
         priorities.push('刷题提升准备度');
       }
@@ -43,7 +74,6 @@ export const StrategyPanel: React.FC = () => {
         priorities.push('投递简历开启流程');
       }
     } else if (gamePhase === 'BREAKTHROUGH') {
-      // 突破期：推进面试
       const activeCompany = companies.find(c => !c.isCompleted && c.stage !== 'rejected');
       if (activeCompany) {
         if (activeCompany.stage === 'written') {
@@ -56,7 +86,6 @@ export const StrategyPanel: React.FC = () => {
         priorities.push('改善导师关系');
       }
     } else {
-      // 收官期：冲刺Offer和签字
       const hasOffer = companies.some(c => c.hasOffer);
       if (!hasOffer) {
         priorities.push('全力争取Offer');
@@ -67,77 +96,145 @@ export const StrategyPanel: React.FC = () => {
       }
     }
 
-    // 通用建议
-    if (risk >= 50) {
-      priorities.push('降低风险');
-    }
-    if (preparation < 2) {
-      priorities.push('提升准备度');
-    }
-
-    // 推荐行动
-    if (risk >= 70) {
-      recommendedAction = '先休息恢复，避免进一步激怒导师';
-    } else if (!sideQuests.find(q => q.id === 'study_1')?.isCompleted && preparation < 3) {
-      recommendedAction = '刷题提升准备度';
-    } else if (companies.every(c => c.stage === 'apply')) {
-      recommendedAction = '投递简历开启求职流程';
-    } else {
-      const activeCompany = companies.find(c => !c.isCompleted && c.stage !== 'rejected');
-      if (activeCompany) {
-        if (activeCompany.stage === 'written') {
-          recommendedAction = `参加${activeCompany.name}笔试`;
-        } else if (activeCompany.stage.startsWith('interview')) {
-          recommendedAction = `准备${activeCompany.name}面试`;
-        } else {
-          recommendedAction = '与导师沟通争取支持';
-        }
-      } else {
-        recommendedAction = '寻找其他机会';
-      }
-    }
+    if (risk >= 50) priorities.push('降低风险');
+    if (preparation < 2) priorities.push('提升准备度');
 
     return { priorities, riskWarning, recommendedAction };
   };
 
-  const strategy = generateStrategy();
+  const localStrategy = generateLocalStrategy();
+
+  // 获取建议类型图标
+  const getSuggestionIcon = (type: string) => {
+    switch (type) {
+      case 'STUDY': return '📚';
+      case 'SOCIAL': return '💬';
+      case 'APPLY': return '📄';
+      case 'INTERVIEW': return '🎯';
+      case 'PERSUADE': return '🗣️';
+      case 'REST': return '☕';
+      default: return '💡';
+    }
+  };
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
       <h3 className="text-lg font-bold text-white mb-3 flex items-center">
         <span className="mr-2">💡</span>
         策略建议
+        {parsedStrategy && (
+          <span className="ml-2 text-xs font-normal text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded">
+            AI 生成
+          </span>
+        )}
       </h3>
 
-      {/* 风险提示 */}
-      {strategy.riskWarning && (
-        <div className="bg-red-900/30 border border-red-700 rounded p-3 mb-3">
-          <p className="text-red-300 text-sm">{strategy.riskWarning}</p>
+      {/* 上轮行动分析 */}
+      {parsedStrategy?.lastActionAnalysis && parsedStrategy.lastActionAnalysis.playerDid !== '无（游戏刚开始）' && (
+        <div className={`rounded p-3 mb-3 ${
+          parsedStrategy.lastActionAnalysis.isMatch 
+            ? 'bg-green-900/30 border border-green-700' 
+            : 'bg-yellow-900/30 border border-yellow-700'
+        }`}>
+          <div className="flex items-start gap-2">
+            {parsedStrategy.lastActionAnalysis.isMatch ? (
+              <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+            )}
+            <div>
+              <p className={`text-sm font-medium ${
+                parsedStrategy.lastActionAnalysis.isMatch ? 'text-green-400' : 'text-yellow-400'
+              }`}>
+                {parsedStrategy.lastActionAnalysis.isMatch ? '✅ 建议目标达成' : '⚠️ 偏离建议目标'}
+              </p>
+              <p className="text-gray-400 text-xs mt-1">
+                {parsedStrategy.lastActionAnalysis.feedback}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* 优先级列表 */}
-      <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-400 mb-2">当前优先级：</h4>
-        <ol className="space-y-1">
-          {strategy.priorities.map((priority, index) => (
-            <li
-              key={index}
-              className="flex items-center text-sm text-gray-300"
-            >
-              <span className="w-5 h-5 rounded-full bg-cyan-900 text-cyan-400 text-xs flex items-center justify-center mr-2">
-                {index + 1}
-              </span>
-              {priority}
-            </li>
-          ))}
-        </ol>
-      </div>
+      {/* 风险提示 */}
+      {(parsedStrategy?.riskWarning || localStrategy.riskWarning) && (
+        <div className="bg-red-900/30 border border-red-700 rounded p-3 mb-3">
+          <p className="text-red-300 text-sm">
+            {parsedStrategy?.riskWarning || localStrategy.riskWarning}
+          </p>
+        </div>
+      )}
+
+      {/* AI 策略建议列表 */}
+      {parsedStrategy?.suggestions && parsedStrategy.suggestions.length > 0 ? (
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-400 mb-2">当前优先级：</h4>
+          <ol className="space-y-2">
+            {parsedStrategy.suggestions
+              .sort((a, b) => a.priority - b.priority)
+              .map((suggestion, index) => (
+              <li
+                key={suggestion.id}
+                className={`flex items-start p-2 rounded ${
+                  suggestion.isCompleted 
+                    ? 'bg-green-900/20 border border-green-700/50' 
+                    : 'bg-gray-800/50 border border-gray-700'
+                }`}
+              >
+                <span className="w-6 h-6 rounded-full bg-cyan-900 text-cyan-400 text-xs flex items-center justify-center mr-2 flex-shrink-0">
+                  {index + 1}
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{getSuggestionIcon(suggestion.type)}</span>
+                    <span className={`text-sm font-medium ${
+                      suggestion.isCompleted ? 'text-green-400 line-through' : 'text-gray-300'
+                    }`}>
+                      {suggestion.title}
+                    </span>
+                    {suggestion.isCompleted && (
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                    )}
+                  </div>
+                  <p className="text-gray-500 text-xs mt-1">{suggestion.description}</p>
+                  {suggestion.isCompleted && suggestion.completionReason && (
+                    <p className="text-green-500/70 text-xs mt-1">
+                      ✓ {suggestion.completionReason}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : (
+        /* 本地生成的策略（后备） */
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-400 mb-2">当前优先级：</h4>
+          <ol className="space-y-1">
+            {localStrategy.priorities.map((priority, index) => (
+              <li
+                key={index}
+                className="flex items-center text-sm text-gray-300"
+              >
+                <span className="w-5 h-5 rounded-full bg-cyan-900 text-cyan-400 text-xs flex items-center justify-center mr-2">
+                  {index + 1}
+                </span>
+                {priority}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {/* 推荐行动 */}
       <div className="bg-cyan-900/20 border border-cyan-700/50 rounded p-3">
         <h4 className="text-sm font-medium text-cyan-400 mb-1">推荐行动</h4>
-        <p className="text-white font-medium">{strategy.recommendedAction}</p>
+        <p className="text-white font-medium">
+          {parsedStrategy?.suggestions?.find(s => s.id === parsedStrategy.nextRecommended)?.title 
+            || localStrategy.recommendedAction 
+            || '根据当前状态选择行动'}
+        </p>
       </div>
 
       {/* 状态摘要 */}

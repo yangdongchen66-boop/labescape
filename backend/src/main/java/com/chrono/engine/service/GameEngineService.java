@@ -126,6 +126,7 @@ public class GameEngineService {
                 int oldPrep = session.getPreparation();
                 int oldHp = session.getPlayer().getHp();
                 int oldMp = session.getPlayer().getMp();
+                int oldGold = session.getGold();
                 int oldDay = session.getCurrentDay();
                 
                 // ========== Step 1: 解析玩家意图并执行游戏逻辑 ==========
@@ -173,20 +174,30 @@ public class GameEngineService {
                 String speaker = actionResult.getNpcName();
                 agentOrchestrator.runExecutor(session, playerInput, checkResult, emitter, speaker);
 
-                // ========== Step 5: 检查事件触发 ==========
+                // ========== Step 5: Strategy (策略顾问) - 生成建议并判断完成度 ==========
+                String lastSuggestions = session.getLastStrategySuggestions();
+                String strategyResult = agentOrchestrator.runStrategy(
+                    session, playerInput, lastSuggestions, emitter
+                );
+                // 保存本轮建议到会话，供下轮判断使用
+                session.setLastStrategySuggestions(strategyResult);
+                // 发送策略更新到前端
+                sendStrategyUpdate(emitter, strategyResult);
+
+                // ========== Step 6: 检查事件触发 ==========
                 List<com.chrono.engine.domain.GameEvent> events = eventSystem.checkAndTriggerEvents(session);
                 for (var event : events) {
                     sendAgentEvent(emitter, "Event", "触发事件: " + event.getTitle());
                 }
 
-                // ========== Step 6: 检查游戏结束条件 ==========
+                // ========== Step 7: 检查游戏结束条件 ==========
                 String gameEndResult = checkGameEnd(session);
                 if (gameEndResult != null) {
                     // 游戏结束，发送结局
                     sendGameEnd(emitter, gameEndResult, session);
                     log.info("[GameEngine] 会话 {} 游戏结束: {}", sessionId, gameEndResult);
                 } else {
-                    // ========== Step 7: 发送状态更新 ==========
+                    // ========== Step 8: 发送状态更新 ==========
                     Map<String, Object> stateUpdate = buildStateUpdate(
                         session, oldRisk, oldMentorMood, oldPrep, oldHp, oldMp, actionResult
                     );
@@ -337,6 +348,56 @@ public class GameEngineService {
             result.setMpChange(20);
             result.setRiskChange(-10);
             
+        } else if (input.contains("买资料") || input.contains("复习资料") || input.contains("买书")) {
+            // 花钱买面试资料，直接加准备度
+            result.setAttribute("INT");
+            result.setDifficulty(6); // 简单检定
+            result.setTimeCost(1);
+            if (session.getGold() >= 50) {
+                session.setGold(session.getGold() - 50);
+                int newPrep = Math.min(5, session.getPreparation() + 1);
+                session.setPreparation(newPrep);
+                result.setPrepChange(1);
+                result.setGoldChange(-50);
+                log.info("[GameEngine] 买资料: -50G, 准备度+1");
+            } else {
+                log.info("[GameEngine] 金币不足，无法购买资料");
+            }
+            
+        } else if (input.contains("请客") || input.contains("送礼") || input.contains("请吃饭")) {
+            // 请导师/师兄吃饭，改善关系
+            result.setAttribute("CHA");
+            result.setDifficulty(8);
+            result.setTimeCost(1);
+            if (session.getGold() >= 150) {
+                session.setGold(session.getGold() - 150);
+                int newMood = Math.min(100, session.getMentorMood() + 15);
+                session.setMentorMood(newMood);
+                result.setMoodChange(15);
+                result.setGoldChange(-150);
+                log.info("[GameEngine] 请客送礼: -150G, 导师态度+15");
+            } else {
+                log.info("[GameEngine] 金币不足，无法请客");
+            }
+            
+        } else if (input.contains("请师弟") || input.contains("找帮手") || input.contains("代写")) {
+            // 请师弟帮忙，消耗金币降低风险
+            result.setAttribute("WIS");
+            result.setDifficulty(8);
+            result.setTimeCost(1);
+            if (session.getGold() >= 100) {
+                session.setGold(session.getGold() - 100);
+                int newMp = Math.min(session.getPlayer().getMaxMp(), session.getPlayer().getMp() + 20);
+                session.getPlayer().setMp(newMp);
+                session.setRisk(Math.max(0, session.getRisk() - 5));
+                result.setMpChange(20);
+                result.setRiskChange(-5);
+                result.setGoldChange(-100);
+                log.info("[GameEngine] 请师弟帮忙: -100G, MP+20, 风险-5");
+            } else {
+                log.info("[GameEngine] 金币不足，无法请师弟帮忙");
+            }
+            
         } else {
             // 默认处理
             result.setAttribute("INT");
@@ -344,12 +405,16 @@ public class GameEngineService {
             result.setTimeCost(1);
         }
         
-        // 推进时间：每次对话消耗1天
+        // 推进时间：每次对话消耗1个时间段（4个时间段=1天），保证游戏有足够的轮数
+        int oldTimeBlock = session.getTimeBlock();
+        int newTimeBlock = (oldTimeBlock + 1) % 4;
+        int dayIncrement = (oldTimeBlock + 1) / 4;  // 时间段从3变到0时，天数+1
         int oldDay = session.getCurrentDay();
-        int newDay = oldDay + 1;
+        int newDay = oldDay + dayIncrement;
+        session.setTimeBlock(newTimeBlock);
         session.setCurrentDay(newDay);
-        session.setInGameHours(newDay * 24);
-        log.info("[GameEngine] 时间推进: Day {} -> Day {}", oldDay, newDay);
+        session.setInGameHours(newDay * 24 + newTimeBlock * 6);
+        log.info("[GameEngine] 时间推进: Day{} Block{} -> Day{} Block{}", oldDay, oldTimeBlock, newDay, newTimeBlock);
         
         // 计算新阶段
         String newPhase;
@@ -394,6 +459,7 @@ public class GameEngineService {
         update.put("preparation", session.getPreparation());
         update.put("hp", session.getPlayer().getHp());
         update.put("mp", session.getPlayer().getMp());
+        update.put("gold", session.getGold());
         
         // 变化值
         Map<String, Integer> changes = new HashMap<>();
@@ -457,6 +523,44 @@ public class GameEngineService {
         } catch (IllegalStateException | IOException e) {
             log.debug("[GameEngine] 发送状态更新失败，连接已关闭");
         }
+    }
+
+    /**
+     * 发送策略更新到前端
+     * 自动提取 LLM 响应中的纯 JSON（去除 markdown 代码块格式）
+     */
+    private void sendStrategyUpdate(SseEmitter emitter, String strategyResult) {
+        try {
+            String cleanJson = extractJsonFromLlmResponse(strategyResult);
+            emitter.send(SseEmitter.event()
+                    .name("strategy-update")
+                    .data(cleanJson));
+            log.info("[GameEngine] 发送策略更新");
+        } catch (IllegalStateException | IOException e) {
+            log.debug("[GameEngine] 发送策略更新失败，连接已关闭");
+        }
+    }
+
+    /**
+     * 从 LLM 响应中提取纯 JSON（去除 ```json ... ``` markdown 格式）
+     */
+    private String extractJsonFromLlmResponse(String response) {
+        if (response == null) return "{}";
+        // 尝试提取 ```json ... ``` 代码块
+        java.util.regex.Pattern jsonBlockPattern = java.util.regex.Pattern.compile(
+            "```json\\s*([\\s\\S]+?)\\s*```"
+        );
+        java.util.regex.Matcher matcher = jsonBlockPattern.matcher(response);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        // 回退：查找第一个 { 到最后一个 } 之间的内容
+        int start = response.indexOf('{');
+        int end = response.lastIndexOf('}');
+        if (start != -1 && end != -1 && end > start) {
+            return response.substring(start, end + 1);
+        }
+        return response;
     }
 
     /**
@@ -545,6 +649,28 @@ public class GameEngineService {
      * @return 结局类型，null表示游戏继续
      */
     private String checkGameEnd(GameSession session) {
+        boolean hasOffer = session.getCompanyProgresses().stream()
+                .anyMatch(CompanyProgress::isHasOffer);
+        
+        // ==================== 隐藏结局（优先级最高） ====================
+        
+        // 速通结局：Day 2前获得Offer + 导师态度正面
+        if (session.getCurrentDay() <= 2 && hasOffer && session.getMentorMood() >= 0) {
+            return "SPEEDRUN_ENDING";
+        }
+        
+        // 社交达人：导师态度达到80+
+        if (session.getMentorMood() >= 80) {
+            return "SOCIAL_MASTER_ENDING";
+        }
+        
+        // 内卷之王：准备度5 + 风险1 00共存
+        if (session.getPreparation() >= 5 && session.getRisk() >= 100) {
+            return "INVOLUTION_KING_ENDING";
+        }
+        
+        // ==================== 硬性失败条件 ====================
+        
         // 硬性失败条件：时间耗尽
         if (session.getCurrentDay() > 7) {
             return "TIMEOUT_FAILURE";
@@ -556,11 +682,11 @@ public class GameEngineService {
         }
         
         // 硬性失败条件：导师关系彻底破裂且没有Offer
-        boolean hasOffer = session.getCompanyProgresses().stream()
-                .anyMatch(CompanyProgress::isHasOffer);
         if (session.getMentorMood() <= -80 && !hasOffer) {
             return "MENTOR_RUINED";
         }
+        
+        // ==================== 成功条件 ====================
         
         // 成功条件：获得Offer且导师态度非负
         if (hasOffer && session.getMentorMood() >= 0) {
@@ -599,7 +725,10 @@ public class GameEngineService {
             boolean isVictory = endingType.equals("PERFECT_ENDING") || 
                                endingType.equals("ESCAPE_ENDING") || 
                                endingType.equals("EARLY_SUCCESS") ||
-                               endingType.equals("GENIUS_ENDING");
+                               endingType.equals("GENIUS_ENDING") ||
+                               endingType.equals("SPEEDRUN_ENDING") ||
+                               endingType.equals("SOCIAL_MASTER_ENDING") ||
+                               endingType.equals("INVOLUTION_KING_ENDING");
             endData.put("gameState", isVictory ? "VICTORY" : "GAME_OVER");
             endData.put("finalStats", Map.of(
                 "day", session.getCurrentDay(),
@@ -628,6 +757,10 @@ public class GameEngineService {
             case "MENTAL_BREAKDOWN" -> "💔 心态崩溃";
             case "MENTOR_RUINED" -> "🔥 关系破裂";
             case "RISK_EXPLOSION" -> "💥 风险爆炸";
+            // 隐藏结局
+            case "SPEEDRUN_ENDING" -> "⚡ 速通大师";
+            case "SOCIAL_MASTER_ENDING" -> "🤝 社交达人";
+            case "INVOLUTION_KING_ENDING" -> "👑 内卷之王";
             // 特殊结局（彩蛋）
             case "VIOLENCE_ENDING" -> "🚔 警察带走了";
             case "INSULT_ENDING" -> "🚨 被开除了";
@@ -647,6 +780,10 @@ public class GameEngineService {
             case "MENTAL_BREAKDOWN" -> "巨大的压力让你彻底崩溃。身体最重要，先休息一下吧。";
             case "MENTOR_RUINED" -> "你和导师的关系彻底破裂，没有Offer，没有支持，研究生生涯陷入危机...";
             case "RISK_EXPLOSION" -> "彩蛋结局！你的高风险行为引发了连锁反应，被导师抓个正着，一切努力付诸东流...";
+            // 隐藏结局
+            case "SPEEDRUN_ENDING" -> "彩蛋结局！你在Day 2就完成了所有目标，这是传说中的速通大师！";
+            case "SOCIAL_MASTER_ENDING" -> "彩蛋结局！你的情商让导师对你赞不绝口，他主动给你写了推荐信！";
+            case "INVOLUTION_KING_ENDING" -> "彩蛋结局！准备度拉满同时风险爆表，你就是卷王本卷！导师又爱又恨...";
             // 特殊结局（彩蛋）
             case "VIOLENCE_ENDING" -> "你的极端行为触发了安保警报。几分钟后，警察冲入实验室，把你带走了。这一切...";
             case "INSULT_ENDING" -> "导师被你的话气得浑身发抖，当即打电话给学院。第二天，你收到了开除通知书...";
@@ -684,6 +821,7 @@ public class GameEngineService {
         private int prepChange = 0;
         private int hpChange = 0;
         private int mpChange = 0;
+        private int goldChange = 0;
         
         // 状态变化
         private boolean dayChanged = false;

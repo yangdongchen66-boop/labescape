@@ -31,6 +31,9 @@ export interface ActionHook {
   mpCost?: number;
   goldCost?: number;
   isRest?: boolean;
+  // 后果预览
+  successReward?: string;  // 成功后果描述
+  failPenalty?: string;    // 失败后果描述
 }
 
 export interface AgentLog {
@@ -49,7 +52,6 @@ const nowIso = () => new Date().toISOString();
 let isProcessingAction = false;
 let actionCallCount = 0;
 let streamingCallCount = 0;
-let currentRequestId: string | null = null;  // 当前请求ID，防止重复提交
 
 // ===== 意图识别 =====
 const INTENT_PATTERNS: { pattern: RegExp; attr: 'str' | 'dex' | 'int' | 'con' | 'wis' | 'cha'; baseDC: number }[] = [
@@ -69,9 +71,9 @@ const INITIAL_CHAT_LOG: ChatMessage[] = [
     text: "晚上10点，实验室里只有机箱的嗡鸣。左边屏幕是跑不通的多智能体算法，右边是阿里和CNCERT的内推确认邮件（距截止仅剩7天）。门突然开了，王导夹着公文包走进来，脸色铁青：'那个横向项目的接口写完没？周末加个班。' 他拉开椅子坐在你旁边。",
     timestamp: nowIso(),
     hooks: [
-      { id: createId('hook'), text: '低头认错，承诺周末加班', attr: 'wis', dc: 8 },
-      { id: createId('hook'), text: '试图用论文思路说服导师', attr: 'cha', dc: 12 },
-      { id: createId('hook'), text: '当场硬刚，拒绝加班', attr: 'str', dc: 16 },
+      { id: createId('hook'), text: '低头认错，承诺周末加班', attr: 'wis', dc: 8, successReward: '导师态度+5', failPenalty: 'MP-10' },
+      { id: createId('hook'), text: '试图用论文思路说服导师', attr: 'cha', dc: 12, successReward: '导师态度+10, 风险-5', failPenalty: '导师态度-5, MP-10' },
+      { id: createId('hook'), text: '当场硬刚，拒绝加班', attr: 'str', dc: 16, successReward: '风险-10, 但需谨慎', failPenalty: '导师态度-15, 风险+20' },
     ],
   }
 ];
@@ -118,9 +120,27 @@ export interface TurnResult {
 }
 
 export interface StrategySuggestion {
-  priority: string[];
+  currentPhase: string;
+  suggestions: Array<{
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    priority: number;
+    isCompleted: boolean;
+    completionReason: string;
+  }>;
+  lastActionAnalysis?: {
+    playerDid: string;
+    expectedWas: string;
+    isMatch: boolean;
+    feedback: string;
+  };
   riskWarning: string;
-  recommendedAction: string;
+  nextRecommended: string;
+  // 兼容旧格式
+  priority?: string[];
+  recommendedAction?: string;
 }
 
 // ===== Store 接口 =====
@@ -440,9 +460,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     console.log(`[Frontend] #${callId} 开始处理动作:`, text, '时间:', Date.now());
     
     const { 
-      addChat, addAgentLog, setRolling, updateRollResult, updateStats, 
-      generateHooks, attributes, hp, mp, setStreamingText, 
-      setIsStreaming 
+      addChat, addAgentLog, setRolling, updateRollResult,
+      generateHooks, setStreamingText, attributes,
+      setIsStreaming
     } = get();
     
     // 1. 显示玩家行动
@@ -467,42 +487,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     updateRollResult(rawRoll, modifier);
     addAgentLog('Dice', `🎲 ${rawRoll}${modifier >= 0 ? '+' : ''}${modifier}=${finalRoll} | ${isSuccess ? '成功' : '失败'}`, isSuccess ? 'success' : 'error');
 
-    // 4. 等待骰子动画完成（2.5秒后）
+    // 4. 等待骰子动画完成（2.5 秒后）
     await new Promise(resolve => setTimeout(resolve, 2500));
-    
+        
     // 5. 关闭骰子，回到对话页
     setRolling(false);
-    
-    // 6. 应用效果
-    if (isSuccess || isCrit) {
-      // 更新准备度和风险
-      if (text.includes('刷题')) {
-        get().updatePreparation(1);
-        get().completeQuest('study_1');
-      }
-      if (text.includes('交流') || text.includes('师弟')) {
-        get().updateMentorMood(5);
-        get().completeQuest('social_1');
-      }
-      if (text.includes('硬刚')) {
-        get().updateRisk(15);
-        get().updateMentorMood(-10);
-      }
-      if (text.includes('说服') || text.includes('沟通')) {
-        get().updateMentorMood(5);
-        get().updateRisk(-5);
-      }
-      updateStats({ mp: Math.min(100, mp + (isCrit ? 20 : 5)) });
-    } else {
-      updateStats({ hp: Math.max(0, hp - (isFumble ? 25 : 10)), mp: Math.max(0, mp - (isFumble ? 25 : 10)) });
-      // 失败增加风险
-      get().updateRisk(5);
-    }
-    
-    // 检查风险任务
-    if (get().risk < 50) {
-      get().completeQuest('risk_control');
-    }
+        
+    // 6. 应用效果 - 移除本地状态更新，完全依赖后端 SSE state-update
+    // 注意：所有状态变化由后端 processGameAction 计算并通过 SSE 推送
+    // 前端本地更新会导致状态冲突和不一致
     
     // 7. 开始流式输出 - 先添加一个空的NPC消息
     const resultText = isCrit ? '🎉 大成功！' : isFumble ? '💀 大失败！' : isSuccess ? '✅ 成功' : '❌ 失败';
@@ -585,9 +578,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     streamingCallCount++;
     const callId = streamingCallCount;
     
-    // 生成唯一请求ID，防止EventSource重连导致的重复处理
+    // 生成唯一请求 ID，防止 EventSource 重连导致的重复处理
     const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    currentRequestId = requestId;
     
     return new Promise((resolve, reject) => {
       const encodedInput = encodeURIComponent(playerInput);
@@ -628,11 +620,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
           set((state) => ({
             gamePhase: stateData.gamePhase ?? state.gamePhase,
             currentDay: stateData.currentDay ?? state.currentDay,
+            timeBlock: stateData.timeBlock !== undefined ? stateData.timeBlock : state.timeBlock,
             risk: stateData.risk !== undefined ? stateData.risk : state.risk,
             mentorMood: stateData.mentorMood !== undefined ? stateData.mentorMood : state.mentorMood,
             preparation: stateData.preparation !== undefined ? stateData.preparation : state.preparation,
             hp: stateData.hp !== undefined ? stateData.hp : state.hp,
             mp: stateData.mp !== undefined ? stateData.mp : state.mp,
+            gold: stateData.gold !== undefined ? stateData.gold : state.gold,
             companies: stateData.companies || state.companies,
             mainQuests: stateData.mainQuests ? 
               state.mainQuests.map(q => ({
@@ -676,6 +670,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }
         } catch (e) {
           console.error('[Frontend] 解析状态更新失败:', e);
+        }
+      });
+      
+      // 监听策略更新事件
+      eventSource.addEventListener('strategy-update', (event) => {
+        console.log('[Frontend] Strategy update:', event.data);
+        try {
+          const strategyData = JSON.parse(event.data);
+          set({ strategySuggestion: strategyData });
+        } catch (e) {
+          console.error('[Frontend] 解析策略更新失败:', e);
         }
       });
       

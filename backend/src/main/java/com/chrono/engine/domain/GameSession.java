@@ -137,6 +137,13 @@ public class GameSession {
     private int preparation = 0;
 
     /**
+     * 金币 (初始800)
+     * 用于购买咡啡、请客等消耗操作
+     */
+    @Builder.Default
+    private int gold = 800;
+
+    /**
      * 当前游戏天数 1-7
      */
     @Builder.Default
@@ -179,6 +186,12 @@ public class GameSession {
      * 用于防止重复处理同一请求
      */
     private Long lastProcessTime;
+
+    /**
+     * 上轮策略建议（JSON字符串）
+     * 供下轮 Strategy Agent 做完成度判断
+     */
+    private String lastStrategySuggestions;
 
     /**
      * 会话状态枚举
@@ -298,6 +311,20 @@ public class GameSession {
      */
     public boolean isActive() {
         return this.status == SessionStatus.ACTIVE;
+    }
+
+    /**
+     * 获取上轮策略建议
+     */
+    public String getLastStrategySuggestions() {
+        return this.lastStrategySuggestions;
+    }
+
+    /**
+     * 设置上轮策略建议
+     */
+    public void setLastStrategySuggestions(String suggestions) {
+        this.lastStrategySuggestions = suggestions;
     }
 
     /**

@@ -149,30 +149,64 @@ public class AgentOrchestratorService {
 
     /**
      * Strategy Agent 系统提示词
-     * 负责生成策略建议
+     * 负责生成策略建议并判断玩家是否完成建议
      */
     private static final String STRATEGY_SYSTEM_PROMPT = """
         你是 Chrono-Agents 的策略顾问。
-        基于当前游戏状态，为玩家提供具体的行动建议。
+        基于当前游戏状态和上轮玩家的实际行动，提供策略建议并判断建议完成情况。
         
         分析维度：
         1. 当前阶段目标（准备期/突破期/收官期）
         2. 资源状况（HP/MP/风险/导师态度）
         3. 求职进度（公司流程阶段）
         4. 时间压力（剩余天数）
+        5. 上轮建议 vs 玩家实际行动（判断建议完成度）
+        
+        【建议类型定义】
+        - STUDY: 刷题提升准备度
+        - SOCIAL: 与师兄/师弟交流获取信息
+        - APPLY: 投递简历开启流程
+        - INTERVIEW: 参加面试
+        - PERSUADE: 说服导师
+        - REST: 休息恢复状态
         
         输出格式（严格 JSON）：
         {
-          "priority": ["建议1", "建议2", "建议3"],
+          "currentPhase": "当前阶段: PREP/BREAKTHROUGH/FINAL",
+          "suggestions": [
+            {
+              "id": "建议唯一ID(如: study_1)",
+              "type": "建议类型(STUDY/SOCIAL/APPLY等)",
+              "title": "建议标题",
+              "description": "具体建议描述",
+              "priority": 优先级数字(1最高),
+              "isCompleted": true/false,
+              "completionReason": "完成或未完成的判断理由"
+            }
+          ],
+          "lastActionAnalysis": {
+            "playerDid": "玩家实际上做了什么",
+            "expectedWas": "上轮建议是什么",
+            "isMatch": true/false,
+            "feedback": "对玩家行动的反馈评价"
+          },
           "riskWarning": "风险提示（如有）",
-          "recommendedAction": "具体推荐的行动"
+          "nextRecommended": "下一步最推荐的行动ID"
         }
+        
+        判断建议完成规则：
+        - 如果上轮建议"刷题"，玩家输入包含"刷题/学习/准备"→ isCompleted=true
+        - 如果上轮建议"社交"，玩家输入包含"交流/聊天/问/找"→ isCompleted=true
+        - 如果上轮建议"投递"，玩家输入包含"投递/申请/发简历"→ isCompleted=true
+        - 如果玩家做了其他有益的事，也算完成，但给出不同评价
+        - 如果玩家完全没按建议走，isCompleted=false，给出调整建议
         
         建议原则：
         - 风险>70时优先降低风险
         - 准备期优先刷题和社交
         - 突破期优先推进面试
         - 收官期优先争取Offer和签字
+        - 根据玩家上轮表现调整建议语气（听话就鼓励，不听话就提醒）
         """;
 
     /**
@@ -662,12 +696,17 @@ public class AgentOrchestratorService {
     // ==================== Strategy Agent ====================
 
     /**
-     * Strategy Agent：生成策略建议
+     * Strategy Agent：生成策略建议并判断完成度
      * 
      * @param session 游戏会话
+     * @param lastPlayerInput 上轮玩家输入
+     * @param lastSuggestions 上轮建议（JSON字符串）
+     * @param emitter SSE 发射器
      * @return 策略建议 JSON 字符串
      */
-    public String runStrategy(GameSession session) {
+    public String runStrategy(GameSession session, String lastPlayerInput, String lastSuggestions, SseEmitter emitter) {
+        sendAgentEvent(emitter, "Strategy", "🎯 分析游戏状态并生成策略建议...");
+        
         // 构建游戏状态描述
         String gameState = String.format("""
             当前游戏状态：
@@ -679,6 +718,10 @@ public class AgentOrchestratorService {
             - 准备度：%d/5
             - 求职进度：%s
             - 主线任务：%s
+            
+            【上轮行动分析】
+            上轮玩家输入："%s"
+            上轮建议列表：%s
             """,
             session.getGamePhase(),
             session.getCurrentDay(),
@@ -692,12 +735,25 @@ public class AgentOrchestratorService {
             session.getMentorMood(),
             session.getPreparation(),
             formatCompanyProgress(session),
-            formatMainQuests(session)
+            formatMainQuests(session),
+            lastPlayerInput != null ? lastPlayerInput : "无（游戏刚开始）",
+            lastSuggestions != null ? lastSuggestions : "无"
         );
 
         // 调用 LLM
         String response = llmService.chat(STRATEGY_SYSTEM_PROMPT, gameState);
         log.debug("[Strategy] 响应: {}", response);
+        
+        // 解析并发送事件
+        try {
+            if (response.contains("\"isCompleted\": true")) {
+                sendAgentEvent(emitter, "Strategy", "✅ 玩家完成了建议目标！");
+            } else if (response.contains("\"isCompleted\": false")) {
+                sendAgentEvent(emitter, "Strategy", "⚠️ 建议目标未完成，调整策略...");
+            }
+        } catch (Exception e) {
+            log.warn("[Strategy] 解析完成状态失败: {}", e.getMessage());
+        }
 
         return response;
     }
