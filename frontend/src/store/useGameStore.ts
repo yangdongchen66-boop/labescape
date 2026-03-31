@@ -352,10 +352,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
    */
   callBackendAPI: async (playerInput: string) => {
     return new Promise((resolve, reject) => {
+      // 从环境变量获取后端 API 地址
+      const apiUrl = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8080';
       
       // 使用 EventSource 连接 SSE 端点
       const encodedInput = encodeURIComponent(playerInput);
-      const url = `http://localhost:8080/api/game/action?sessionId=player-session&input=${encodedInput}`;
+      const url = `${apiUrl}/api/game/action?sessionId=player-session&input=${encodedInput}`;
       
       console.log('[Frontend] Connecting to SSE:', url);
       const eventSource = new EventSource(url);
@@ -582,9 +584,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     
     return new Promise((resolve, reject) => {
+      // 从环境变量获取后端 API 地址
+      const apiUrl = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8080';
+          
       const encodedInput = encodeURIComponent(playerInput);
-      // 添加requestId参数，后端可以用来去重
-      const url = `http://localhost:8080/api/game/action?sessionId=player-session&input=${encodedInput}&requestId=${requestId}`;
+      // 添加 requestId 参数，后端可以用来去重
+      const url = `${apiUrl}/api/game/action?sessionId=player-session&input=${encodedInput}&requestId=${requestId}`;
       
       console.log(`[Frontend] #${callId} Connecting to SSE:`, url, '时间:', Date.now());
       const eventSource = new EventSource(url);
