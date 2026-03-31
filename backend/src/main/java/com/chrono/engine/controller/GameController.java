@@ -41,11 +41,8 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/api/game")
 @RequiredArgsConstructor
-@CrossOrigin(
-    origins = "*",  // 开发阶段允许所有来源，生产环境应配置具体域名
-    allowedHeaders = "*",
-    exposedHeaders = "*"
-)
+// CORS 配置已移至 CorsConfig.java 全局配置
+// @CrossOrigin 注解已移除，避免与全局配置冲突
 public class GameController {
 
     /**
