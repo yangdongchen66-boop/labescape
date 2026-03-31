@@ -817,9 +817,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resetGame: async () => {
+    // 从环境变量获取后端 API 地址
+    const apiUrl = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8080';
+    
     // 调用后端重置 API
     try {
-      await fetch('http://localhost:8080/api/game/reset?sessionId=player-session', {
+      await fetch(`${apiUrl}/api/game/reset?sessionId=player-session`, {
         method: 'POST',
       });
       console.log('[Frontend] 后端会话已重置');

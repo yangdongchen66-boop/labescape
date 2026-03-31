@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabEscape 一键部署助手</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+        }
+        .step h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .step-content {
+            color: #555;
+            line-height: 1.8;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button.secondary {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+        .checklist {
+            list-style: none;
+            margin: 15px 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            color: #555;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            color: #667eea;
+            font-weight: bold;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            color: #856404;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            color: #155724;
+        }
+        .links {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-badge.done {
+            background: #28a745;
+            color: white;
+        }
+        .status-badge.pending {
+            background: #ffc107;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 LabEscape 自动部署助手</h1>
+        <p class="subtitle">按照以下步骤完成游戏上线部署</p>
+
+        <!-- Step 1 -->
+        <div class="step">
+            <h2>第一步：推送代码到 GitHub <span class="status-badge pending">待完成</span></h2>
+            <div class="step-content">
+                <p><strong>仓库地址：</strong></p>
+                <div class="code-block">https://github.com/yangdongchen66-boop/labescape.git</div>
+                
+                <p><strong>方法 A：使用 GitHub Desktop（推荐）</strong></p>
+                <ol style="margin: 15px 0 15px 30px; line-height: 2;">
+                    <li>打开 GitHub Desktop</li>
+                    <li>File → Add Local Repository → 选择 <code>E:\chatAI</code></li>
+                    <li>点击 "Push origin" 按钮</li>
+                </ol>
+
+                <p><strong>方法 B：命令行</strong></p>
+                <div class="code-block">cd E:\chatAI
+git remote set-url origin https://github.com/yangdongchen66-boop/labescape.git
+git push origin master</div>
+
+                <div class="warning">
+                    <strong>⚠️ 注意：</strong> 如果遇到网络错误，请使用 GitHub Desktop 或直接访问 GitHub 网页上传文件。
+                </div>
+
+                <a href="https://github.com/yangdongchen66-boop/labescape" target="_blank" class="button">查看 GitHub 仓库</a>
+                <a href="https://desktop.github.com/" target="_blank" class="button secondary">下载 GitHub Desktop</a>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step">
+            <h2>第二步：连接 Railway <span class="status-badge pending">待完成</span></h2>
+            <div class="step-content">
+                <ol class="checklist">
+                    <li>访问 Railway 并登录</li>
+                    <li>创建新项目，选择 "Deploy from GitHub repo"</li>
+                    <li>授权并选择 <code>labescape</code> 仓库</li>
+                    <li>Settings → Root Directory 设置为 <code>backend</code></li>
+                    <li>添加环境变量：
+                        <ul style="margin: 10px 0 10px 30px;">
+                            <li><code>DEEPSEEK_API_KEY</code> = your_api_key</li>
+                            <li><code>SERVER_PORT</code> = 8080</li>
+                            <li><code>JAVA_VERSION</code> = 21</li>
+                        </ul>
+                    </li>
+                    <li>等待自动部署完成（约 3-5 分钟）</li>
+                    <li>Settings → Domains → Generate Domain，复制生成的 URL</li>
+                </ol>
+
+                <a href="https://railway.app/dashboard" target="_blank" class="button">打开 Railway Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step">
+            <h2>第三步：更新 Vercel 配置 <span class="status-badge pending">待完成</span></h2>
+            <div class="step-content">
+                <ol class="checklist">
+                    <li>访问 Vercel Dashboard</li>
+                    <li>选择 <code>frontend</code> 项目</li>
+                    <li>Settings → Environment Variables</li>
+                    <li>编辑 <code>VITE_API_BASE_URL</code></li>
+                    <li>设置为你的 Railway URL</li>
+                    <li>保存并重新部署（Redeploy）</li>
+                </ol>
+
+                <a href="https://vercel.com/dashboard" target="_blank" class="button">打开 Vercel Dashboard</a>
+                <a href="https://frontend-4a29rb70r-yangdongchens-projects.vercel.app" target="_blank" class="button secondary">查看前端预览</a>
+            </div>
+        </div>
+
+        <!-- Success -->
+        <div class="step success">
+            <h2>✅ 完成！测试游戏</h2>
+            <div class="step-content">
+                <p><strong>访问游戏：</strong></p>
+                <div class="code-block">https://frontend-4a29rb70r-yangdongchens-projects.vercel.app</div>
+                
+                <p><strong>测试清单：</strong></p>
+                <ul class="checklist">
+                    <li>页面正常加载</li>
+                    <li>能看到开场剧情</li>
+                    <li>HP/MP/金币显示正常</li>
+                    <li>点击行动选项能触发骰子动画</li>
+                    <li>濒临崩溃时出现红色边框警告</li>
+                    <li>NPC 对话显示态度表情</li>
+                </ul>
+
+                <p><strong>验证后端健康检查：</strong></p>
+                <div class="code-block">curl https://your-railway-url.app/api/game/health</div>
+            </div>
+        </div>
+
+        <!-- Links -->
+        <div class="links">
+            <h3>📚 更多资源</h3>
+            <ul style="margin: 15px 0 15px 30px; line-height: 2;">
+                <li><a href="file:///E:/chatAI/AUTO_DEPLOY.md" target="_blank">详细部署文档（AUTO_DEPLOY.md）</a></li>
+                <li><a href="file:///E:/chatAI/QUICK_START.md" target="_blank">快速开始指南（QUICK_START.md）</a></li>
+                <li><a href="file:///E:/chatAI/README_DEPLOYMENT.md" target="_blank">完整部署总结（README_DEPLOYMENT.md）</a></li>
+                <li><a href="file:///E:/chatAI/BACKEND_DEPLOY.md" target="_blank">后端部署指南（BACKEND_DEPLOY.md）</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 简单的交互：点击步骤标记为完成
+        document.querySelectorAll('.step').forEach(step => {
+            step.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'A' && e.target.tagName !== 'CODE') {
+                    const badge = this.querySelector('.status-badge');
+                    if (badge && badge.classList.contains('pending')) {
+                        badge.classList.remove('pending');
+                        badge.classList.add('done');
+                        badge.textContent = '已完成';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

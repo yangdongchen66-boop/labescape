@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 LabEscape - 立即开玩</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .game-url {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            word-break: break-all;
+        }
+        .game-url a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .features {
+            text-align: left;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .feature-item {
+            padding: 10px 0;
+            color: #555;
+            font-size: 1em;
+        }
+        .feature-icon {
+            display: inline-block;
+            width: 30px;
+            margin-right: 10px;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 10px 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .copy-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .share-buttons {
+            margin-top: 30px;
+        }
+        .share-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .wechat { background: #07c160; }
+        .qq { background: #12b7f5; }
+        .weibo { background: #e6162d; }
+        .qzone { background: #fece00; color: #333; }
+        .tips {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+            color: #856404;
+            text-align: left;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎮 LabEscape</h1>
+        <p class="subtitle">AI 驱动的奇幻冒险之旅</p>
+
+        <!-- Game URL -->
+        <div class="game-url">
+            🌐 立即开玩：<br><br>
+            <a href="https://frontend-4a29rb70r-yangdongchens-projects.vercel.app" target="_blank">
+                https://frontend-4a29rb70r-yangdongchens-projects.vercel.app
+            </a>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="margin: 20px 0;">
+            <a href="https://frontend-4a29rb70r-yangdongchens-projects.vercel.app" 
+               target="_blank" 
+               class="button">
+                🚀 开始游戏
+            </a>
+            <button onclick="copyUrl()" class="button copy-btn">
+                📋 复制链接
+            </button>
+        </div>
+
+        <!-- Features -->
+        <div class="features">
+            <h3 style="margin-bottom: 15px; color: #333;">✨ 游戏特色</h3>
+            <div class="feature-item">
+                🤖 AI 地下城主，无限剧情可能
+            </div>
+            <div class="feature-item">
+                🎲 经典 D&D 5e 规则系统
+            </div>
+            <div class="feature-item">
+                ⚔️ 策略性战斗与检定机制
+            </div>
+            <div class="feature-item">
+                💬 丰富的 NPC 互动对话
+            </div>
+            <div class="feature-item">
+                📱 手机/平板/电脑全平台支持
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number">∞</span>
+                <span class="stat-label">剧情可能性</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">5e</span>
+                <span class="stat-label">规则版本</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">⚡</span>
+                <span class="stat-label">即时响应</span>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips">
+            <strong>💡 游戏提示：</strong>
+            <ul style="margin: 10px 0 0 20px; line-height: 2;">
+                <li>无需注册，点击即玩</li>
+                <li>每个选择都至关重要</li>
+                <li>合理分配生命值和资源</li>
+                <li>善用策略建议系统</li>
+                <li>探索隐藏的剧情线索</li>
+            </ul>
+        </div>
+
+        <!-- Share Buttons -->
+        <div class="share-buttons">
+            <h3 style="margin-bottom: 15px; color: #333;">📢 分享给好友</h3>
+            <a href="weixin://" class="share-btn wechat">微信</a>
+            <a href="mqqapi://" class="share-btn qq">QQ</a>
+            <a href="https://service.weibo.com/share/" class="share-btn weibo">微博</a>
+            <a href="https://user.qzone.qq.com/" class="share-btn qzone">QQ 空间</a>
+        </div>
+
+        <!-- Copy Success Message -->
+        <div id="copyMessage" style="display: none; background: #d4edda; color: #155724; padding: 15px; margin-top: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
+            ✅ 链接已复制！快去分享给朋友吧！
+        </div>
+    </div>
+
+    <script>
+        function copyUrl() {
+            const url = 'https://frontend-4a29rb70r-yangdongchens-projects.vercel.app';
+            navigator.clipboard.writeText(url).then(() => {
+                const msg = document.getElementById('copyMessage');
+                msg.style.display = 'block';
+                setTimeout(() => {
+                    msg.style.display = 'none';
+                }, 3000);
+            }).catch(err => {
+                alert('复制失败，请手动复制链接');
+            });
+        }
+
+        // 自动检测分享平台
+        document.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (!this.getAttribute('href').startsWith('http')) {
+                    // 移动端直接唤起 APP
+                    return;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

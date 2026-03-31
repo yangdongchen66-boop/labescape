@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 LabEscape 游戏访问测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #17a2b8;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 10px 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .checklist {
+            list-style: none;
+            margin: 20px 0;
+        }
+        .checklist li {
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+        }
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .instructions ol {
+            margin: 10px 0 0 20px;
+            line-height: 2.5;
+        }
+        code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .test-button {
+            background: #28a745;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 LabEscape 访问测试</h1>
+        
+        <!-- Test Status -->
+        <div id="testStatus" class="status info">
+            🔄 正在进行自动测试...
+        </div>
+
+        <!-- Quick Access -->
+        <div class="test-section">
+            <h2>🚀 快速访问</h2>
+            <p style="margin: 15px 0;">点击下面的按钮直接开始游戏：</p>
+            <a href="https://frontend-4a29rb70r-yangdongchens-projects.vercel.app" 
+               target="_blank" 
+               class="button">
+                🎮 进入游戏
+            </a>
+        </div>
+
+        <!-- Instructions for Friends -->
+        <div class="instructions">
+            <h3 style="margin-top: 0;">📋 给朋友看的正确访问方式</h3>
+            <ol>
+                <li>打开 <strong>Chrome</strong> 或 <strong>Edge</strong> 浏览器</li>
+                <li>在<strong>地址栏</strong>（浏览器最上方的长条）输入：
+                    <br><code>https://frontend-4a29rb70r-yangdongchens-projects.vercel.app</code>
+                </li>
+                <li>按 <strong>Enter 键</strong></li>
+                <li>应该立即看到游戏，<strong>不需要登录</strong></li>
+            </ol>
+            <p style="margin-top: 15px; font-weight: bold;">
+                ⚠️ 注意：不要从 Vercel.com 首页进入，必须直接在地址栏输入完整 URL！
+            </p>
+        </div>
+
+        <!-- Common Issues -->
+        <div class="test-section">
+            <h3>🔍 常见问题检查</h3>
+            <ul class="checklist">
+                <li>URL 是否完全正确（包括 https://）</li>
+                <li>是否在浏览器地址栏直接输入（不是搜索引擎）</li>
+                <li>是否使用了现代浏览器（Chrome/Edge/Firefox）</li>
+                <li>是否清除了浏览器缓存</li>
+                <li>网络环境是否正常</li>
+            </ul>
+        </div>
+
+        <!-- Manual Test -->
+        <div class="test-section">
+            <h3>🧪 手动测试</h3>
+            <p>如果自动测试失败，可以手动测试：</p>
+            <button onclick="manualTest()" class="button test-button">
+                🔬 运行手动测试
+            </button>
+            <div id="manualResult" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="test-section" style="background: #e7f3ff; border-left-color: #007bff;">
+            <h3>📞 需要帮助？</h3>
+            <p style="margin: 15px 0;">如果仍然无法访问，请提供以下信息：</p>
+            <ul style="margin: 10px 0 0 20px; line-height: 2;">
+                <li>看到的错误页面截图</li>
+                <li>使用的浏览器名称和版本</li>
+                <li>输入的确切 URL</li>
+                <li>网络环境（家庭/公司/学校）</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Auto test on page load
+        window.onload = function() {
+            runAutoTest();
+        };
+
+        function runAutoTest() {
+            const statusDiv = document.getElementById('testStatus');
+            const gameUrl = 'https://frontend-4a29rb70r-yangdongchens-projects.vercel.app';
+            
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '🔄 正在连接服务器...';
+
+            // Try to fetch the game page
+            fetch(gameUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok || response.status === 302) {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = `
+                            ✅ 测试通过！<br><br>
+                            服务器响应正常，您可以正常访问游戏。<br>
+                            如果朋友仍然看到登录页面，请按照上面的"正确访问方式"操作。
+                        `;
+                    } else {
+                        throw new Error('Server returned ' + response.status);
+                    }
+                })
+                .catch(error => {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `
+                        ❌ 测试发现问题<br><br>
+                        错误信息：${error.message}<br><br>
+                        可能原因：<br>
+                        1. 网络连接问题<br>
+                        2. 服务器暂时不可用<br>
+                        3. 防火墙或网络限制<br><br>
+                        建议：请使用手机热点测试，或联系开发者。
+                    `;
+                });
+        }
+
+        function manualTest() {
+            const resultDiv = document.getElementById('manualResult');
+            const gameUrl = 'https://frontend-4a29rb70r-yangdongchens-projects.vercel.app';
+            
+            resultDiv.innerHTML = '🔄 测试中...';
+            
+            // Create a test iframe
+            const testFrame = document.createElement('iframe');
+            testFrame.style.display = 'none';
+            testFrame.src = gameUrl;
+            testFrame.onload = function() {
+                resultDiv.innerHTML = `
+                    <div style="background: #d4edda; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        ✅ <strong>手动测试成功！</strong><br><br>
+                        游戏页面可以正常加载。如果朋友看到登录页面，是因为：<br>
+                        <br>
+                        <strong>❌ 错误的方式：</strong><br>
+                        - 在搜索引擎搜索网址<br>
+                        - 从 Vercel.com 首页进入<br>
+                        - 手动输入时漏掉部分字符<br>
+                        <br>
+                        <strong>✅ 正确的方式：</strong><br>
+                        - 直接在浏览器地址栏输入完整 URL<br>
+                        - 确保包含 https://<br>
+                        - 复制粘贴完整的链接<br>
+                    </div>
+                `;
+            };
+            testFrame.onerror = function() {
+                resultDiv.innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                        ❌ <strong>手动测试失败！</strong><br><br>
+                        无法加载游戏页面。可能原因：<br>
+                        1. 网络连接问题<br>
+                        2. 服务器配置问题<br>
+                        3. 浏览器安全策略<br><br>
+                        建议：尝试清除缓存或使用其他浏览器。
+                    </div>
+                `;
+            };
+            document.body.appendChild(testFrame);
+        }
+    </script>
+</body>
+</html>

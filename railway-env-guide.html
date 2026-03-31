@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway 环境变量配置 - 3 分钟搞定</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .step {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        .step:hover {
+            transform: translateX(5px);
+        }
+        .step h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .variable-card {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .variable-name {
+            font-family: 'Courier New', monospace;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .variable-value {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            color: #28a745;
+            font-weight: bold;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 20px 10px 20px 0;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .checklist {
+            list-style: none;
+            margin: 15px 0;
+        }
+        .checklist li {
+            padding: 12px 0;
+            color: #555;
+            font-size: 1.05em;
+        }
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+            color: #856404;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+            color: #155724;
+            text-align: center;
+            font-weight: bold;
+        }
+        .code-preview {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .screenshot {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+            color: #6c757d;
+        }
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 30px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ Railway 环境变量配置</h1>
+        <p class="subtitle">只需 3 分钟，轻松搞定后端配置！</p>
+
+        <!-- Progress -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar">0% 完成</div>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step" onclick="markComplete(33)">
+            <h2><span class="step-number">1</span>打开 Railway Dashboard</h2>
+            <p>点击下面的按钮打开 Railway 控制台：</p>
+            <a href="https://railway.app/dashboard" target="_blank" class="button">
+                🚀 打开 Railway Dashboard
+            </a>
+            <p style="margin-top: 15px; color: #666;">
+                👉 登录后，找到你的 <strong>labescape</strong> 项目并点击进入
+            </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step" onclick="markComplete(66)">
+            <h2><span class="step-number">2</span>切换到 Variables 标签</h2>
+            <p>在项目页面顶部导航栏，点击 <strong>"Variables"</strong> 标签</p>
+            
+            <div class="screenshot">
+                📍 位置：Overview | Deployments | <strong>Variables</strong> | Settings
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step" onclick="markComplete(100)">
+            <h2><span class="step-number">3</span>添加 3 个环境变量</h2>
+            <p>点击 <strong>"New Variable"</strong> 按钮，依次添加以下变量：</p>
+
+            <!-- Variable 1 -->
+            <div class="variable-card">
+                <div class="variable-name">DEEPSEEK_API_KEY</div>
+                <p style="margin: 10px 0;"><strong>值：</strong></p>
+                <div class="variable-value">sk_xxxxxxxxxxxxxxxxxxxx</div>
+                <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    ⚠️ 替换为你的真实 DeepSeek API Key
+                </p>
+            </div>
+
+            <!-- Variable 2 -->
+            <div class="variable-card">
+                <div class="variable-name">SERVER_PORT</div>
+                <p style="margin: 10px 0;"><strong>值：</strong></p>
+                <div class="variable-value">8080</div>
+            </div>
+
+            <!-- Variable 3 -->
+            <div class="variable-card">
+                <div class="variable-name">JAVA_VERSION</div>
+                <p style="margin: 10px 0;"><strong>值：</strong></p>
+                <div class="variable-value">21</div>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ 注意：</strong> 确保变量名完全正确（大写字母），不要有拼写错误！
+            </div>
+        </div>
+
+        <!-- Success -->
+        <div class="success">
+            🎉 完成！Railway 会自动重新部署，等待 2-3 分钟即可
+        </div>
+
+        <!-- Checklist -->
+        <div class="step">
+            <h2>✅ 验证清单</h2>
+            <ul class="checklist">
+                <li>成功登录 Railway Dashboard</li>
+                <li>找到了 labescape 项目</li>
+                <li>点击了 Variables 标签</li>
+                <li>添加了 DEEPSEEK_API_KEY</li>
+                <li>添加了 SERVER_PORT = 8080</li>
+                <li>添加了 JAVA_VERSION = 21</li>
+                <li>看到所有 3 个变量显示在列表中</li>
+            </ul>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="step">
+            <h2>🎯 下一步</h2>
+            <ol style="margin-left: 30px; line-height: 2.5;">
+                <li>等待 Railway 自动重新部署（2-3 分钟）</li>
+                <li>在 <strong>Deployments</strong> 标签查看部署状态</li>
+                <li>部署成功后，获取生成的域名 URL</li>
+                <li>将该 URL 配置到 Vercel 的 <code>VITE_API_BASE_URL</code></li>
+            </ol>
+
+            <div class="code-preview">
+VITE_API_BASE_URL=https://your-app.up.railway.app
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+            <h3>📚 快速链接</h3>
+            <ul style="margin: 15px 0 15px 30px; line-height: 2.5;">
+                <li><a href="https://railway.app/dashboard" target="_blank">Railway Dashboard</a></li>
+                <li><a href="file:///E:/chatAI/RAILWAY_ENVIRONMENT_VARIABLES.md" target="_blank">详细配置文档</a></li>
+                <li><a href="file:///E:/chatAI/deploy-wizard.html" target="_blank">完整部署向导</a></li>
+                <li><a href="file:///E:/chatAI/START_HERE.md" target="_blank">快速开始指南</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function markComplete(percent) {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = percent + '% 完成';
+            
+            if (percent === 100) {
+                progressBar.style.background = 'linear-gradient(90deg, #28a745 0%, #20c997 100%)';
+            }
+        }
+    </script>
+</body>
+</html>
