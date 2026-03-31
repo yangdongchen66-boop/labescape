@@ -7,6 +7,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![DeepSeek](https://img.shields.io/badge/LLM-DeepSeek-orange)](https://deepseek.com/)
 
+## 🌐 在线演示
+
+访问在线演示：**[https://labescape.vercel.app](https://frontend-sigma-gray-ncizc6gc4c.vercel.app?_vercel_share=bf58CSZM4OV7ZJirH0KSArE7tB5nlifa)**
+
 ## 🎬 游戏简介
 
 你是一名研二学生，面临找实习和毕业的双重压力。秋招季仅剩 7 天，导师却不放人做实习，要求先完成横向项目。你该如何在有限的时间内，平衡导师关系、准备笔试面试、最终拿到心仪的 Offer？
