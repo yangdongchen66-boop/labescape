@@ -59,10 +59,11 @@ public class CorsConfig {
                         // 预检请求缓存时间（秒）
                         .maxAge(3600);
 
-                // 对健康检查接口也启用 CORS
+                // 对健康检查接口也启用 CORS（允许所有来源，但不携带认证信息）
                 registry.addMapping("/api/game/health")
-                        .allowedOrigins("*")
-                        .allowedMethods("GET");
+                        .allowedOriginPatterns("*")
+                        .allowedMethods("GET")
+                        .allowCredentials(false);
             }
         };
     }
